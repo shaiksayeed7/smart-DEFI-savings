@@ -18,7 +18,7 @@ YO Agent is an autonomous DeFi savings account powered by YO vault infrastructur
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| Frontend | Next.js 14 (App Router) | SSR, routing, performance |
+| Frontend | Next.js 15 (App Router) | SSR, routing, performance |
 | Wallet | wagmi v2 + injected connector | Wallet connection and signing |
 | YO Integration | @yo-protocol/react hooks | Vault data, deposit, redeem, balances |
 | AI Agent | Decision engine API route | Allocation logic, plain-English explanations |
@@ -73,12 +73,72 @@ Displayed as: `Portfolio Confidence: 87 / 100`
 
 ## Getting Started
 
+### Prerequisites
+
+- **Node.js** >= 18.17 (recommended: latest LTS)
+- **npm** >= 9
+
+### Local Setup
+
 ```bash
+# 1. Clone the repository
+git clone https://github.com/shaiksayeed7/smart-DEFI-savings.git
+cd smart-DEFI-savings
+
+# 2. Install dependencies
 npm install
+
+# 3. Start the development server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the Next.js development server with hot reload |
+| `npm run build` | Create an optimized production build |
+| `npm run start` | Serve the production build locally |
+| `npm run lint` | Run ESLint to check for code issues |
+
+### Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── page.tsx            # Landing page
+│   ├── goal-setup/         # Set savings goal and risk preference
+│   ├── dashboard/          # Portfolio overview, yield, and scores
+│   ├── agent-feed/         # Agent activity log with tx hashes
+│   ├── withdraw/           # Partial/full redemption UI
+│   └── api/agent/          # Decision engine API route
+├── components/             # Reusable React components
+├── hooks/                  # Custom hooks (YO Protocol integration)
+└── lib/                    # Core engines and config
+    ├── allocation-engine.ts
+    ├── confidence-engine.ts
+    ├── risk-scoring.ts
+    ├── vaults.ts
+    └── wagmi-config.ts
+```
+
+### Routes
+
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page — vault highlights and competitive comparison |
+| `/goal-setup` | Set dollar target, date, and risk preference; view agent proposal |
+| `/dashboard` | Portfolio value, goal progress, daily yield, risk & confidence scores |
+| `/agent-feed` | Chronological decision log with BaseScan transaction links |
+| `/withdraw` | Slider-based redemption with per-vault breakdown and gas estimate |
+
+### Troubleshooting
+
+- **Port already in use** — Run `npm run dev -- -p 3001` to use a different port.
+- **Module not found errors** — Delete `node_modules` and `package-lock.json`, then run `npm install` again.
+- **TypeScript errors** — Run `npx tsc --noEmit` to see all type issues.
 
 ## Why YO Agent Wins
 
