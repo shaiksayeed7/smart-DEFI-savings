@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 const navItems = [
   { href: '/dashboard', label: 'Home', icon: '🏠' },
   { href: '/agent-feed', label: 'Agent Feed', icon: '🤖' },
-  { href: '/withdraw', label: 'Withdraw', icon: '💰' },
+  { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export function BottomNav() {
@@ -21,7 +21,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 min-w-[64px] py-2 ${
+              className={`flex flex-col items-center gap-1 min-w-[64px] min-h-[44px] py-2 justify-center ${
                 isActive ? 'text-blue-400' : 'text-gray-500 hover:text-gray-300'
               }`}
             >

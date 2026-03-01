@@ -8,34 +8,97 @@ import { AllocationRings } from '@/components/allocation-rings';
 import { RiskScoreBadge } from '@/components/risk-score-badge';
 import { ConfidenceScore } from '@/components/confidence-score';
 import { WalletGuard } from '@/components/wallet-guard';
-import { RiskTier } from '@/lib/types';
+import { RiskTier, Allocation } from '@/lib/types';
 import { generateProposal } from '@/lib/allocation-engine';
 import { computePortfolioRiskScore } from '@/lib/risk-scoring';
 import { computePortfolioConfidence } from '@/lib/confidence-engine';
 
+function parseGoalText(text: string): { amount?: number; target?: number; date?: string } {
+  const result: { amount?: number; target?: number; date?: string } = {};
+  const dollarAmounts = text.match(/\$[\d,]+/g);
+  if (dollarAmounts && dollarAmounts.length >= 1) {
+    result.amount = parseInt(dollarAmounts[0].replace(/[$,]/g, ''), 10);
+    if (dollarAmounts.length >= 2) {
+      result.target = parseInt(dollarAmounts[1].replace(/[$,]/g, ''), 10);
+    }
+  }
+  const yearMatch = text.match(/\b(20\d{2})\b/);
+  if (yearMatch) {
+    result.date = `${yearMatch[1]}-01-01`;
+  }
+  const monthMatch = text.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i);
+  if (monthMatch) {
+    const months: Record<string, string> = {
+      january: '01', february: '02', march: '03', april: '04', may: '05', june: '06',
+      july: '07', august: '08', september: '09', october: '10', november: '11', december: '12',
+    };
+    const month = months[monthMatch[1].toLowerCase()];
+    const year = yearMatch ? yearMatch[1] : new Date().getFullYear() + 1;
+    result.date = `${year}-${month}-01`;
+  }
+  return result;
+}
+
 export default function GoalSetupPage() {
   const router = useRouter();
+  const [goalText, setGoalText] = useState('');
   const [amount, setAmount] = useState('1000');
   const [targetAmount, setTargetAmount] = useState('1120');
   const [targetDate, setTargetDate] = useState('2027-01-01');
   const [riskTier, setRiskTier] = useState<RiskTier>('balanced');
+  const [isLoadingProposal, setIsLoadingProposal] = useState(false);
+  const [apiRationale, setApiRationale] = useState<string | null>(null);
+  const [apiAllocations, setApiAllocations] = useState<Allocation[] | null>(null);
 
   const currentAmount = parseFloat(amount) || 0;
   const target = parseFloat(targetAmount) || 0;
-  const proposal = generateProposal(riskTier, currentAmount, target, 'Base');
-  const riskScore = computePortfolioRiskScore(proposal.allocations);
-  const confidence = computePortfolioConfidence(proposal.allocations);
+  const localProposal = generateProposal(riskTier, currentAmount, target, 'Base');
+  const displayAllocations = apiAllocations || localProposal.allocations;
+  const displayRationale = apiRationale || localProposal.rationale;
+  const riskScore = computePortfolioRiskScore(displayAllocations);
+  const confidence = computePortfolioConfidence(displayAllocations);
+
+  const handleGoalTextApply = () => {
+    const parsed = parseGoalText(goalText);
+    if (parsed.amount) setAmount(String(parsed.amount));
+    if (parsed.target) setTargetAmount(String(parsed.target));
+    if (parsed.date) setTargetDate(parsed.date);
+  };
+
+  const fetchAgentProposal = async () => {
+    setIsLoadingProposal(true);
+    try {
+      const res = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          riskTier,
+          currentAmount: currentAmount,
+          targetAmount: target,
+          gasCostUsd: 0.42,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setApiAllocations(data.allocations);
+        setApiRationale(data.rationale);
+      }
+    } catch {
+      // Fallback to local proposal on error
+    } finally {
+      setIsLoadingProposal(false);
+    }
+  };
 
   const handleProceed = () => {
-    // Store goal in localStorage for the dashboard
     const goal = {
       currentAmount,
       targetAmount: target,
       targetDate,
       riskTier,
-      allocations: proposal.allocations,
-      rationale: proposal.rationale,
-      projectedApy: proposal.projectedApy,
+      allocations: displayAllocations,
+      rationale: displayRationale,
+      projectedApy: localProposal.projectedApy,
     };
     localStorage.setItem('yo-agent-goal', JSON.stringify(goal));
     router.push('/dashboard');
@@ -58,6 +121,29 @@ export default function GoalSetupPage() {
         </p>
 
         <div className="space-y-8">
+          {/* Natural Language Goal Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Describe your goal in plain English (optional)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={goalText}
+                onChange={(e) => setGoalText(e.target.value)}
+                className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:outline-none"
+                placeholder="e.g. Save $1000 to reach $1200 by December 2027"
+              />
+              <button
+                onClick={handleGoalTextApply}
+                disabled={!goalText.trim()}
+                className="px-4 py-3 bg-gray-800 text-gray-300 rounded-xl text-sm hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+
           {/* Amount Input */}
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">
@@ -109,7 +195,16 @@ export default function GoalSetupPage() {
           </div>
 
           {/* Risk Dial */}
-          <RiskDial value={riskTier} onChange={setRiskTier} />
+          <RiskDial value={riskTier} onChange={(v) => { setRiskTier(v); setApiAllocations(null); setApiRationale(null); }} />
+
+          {/* Generate AI Proposal */}
+          <button
+            onClick={fetchAgentProposal}
+            disabled={isLoadingProposal || currentAmount <= 0}
+            className="w-full px-4 py-3 bg-gray-800 text-gray-200 rounded-xl text-sm hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-700 min-h-[44px]"
+          >
+            {isLoadingProposal ? 'Agent is thinking...' : '🤖 Ask Agent for Proposal'}
+          </button>
 
           {/* Agent Proposal Preview */}
           <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800">
@@ -117,17 +212,17 @@ export default function GoalSetupPage() {
               🤖 Agent&apos;s Proposal
             </h3>
 
-            <p className="text-gray-300 text-sm mb-4">{proposal.rationale}</p>
+            <p className="text-gray-300 text-sm mb-4">{displayRationale}</p>
 
             <div className="mb-4">
-              <AllocationRings allocations={proposal.allocations} />
+              <AllocationRings allocations={displayAllocations} />
             </div>
 
             <div className="flex items-center gap-4 mb-4">
               <RiskScoreBadge score={riskScore} />
               <span className="text-sm text-gray-400">
                 Projected APY:{' '}
-                <span className="text-green-400 font-semibold">{proposal.projectedApy}%</span>
+                <span className="text-green-400 font-semibold">{localProposal.projectedApy}%</span>
               </span>
             </div>
 
