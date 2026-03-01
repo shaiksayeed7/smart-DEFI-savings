@@ -6,7 +6,7 @@ import { render, screen } from '@testing-library/react';
 jest.mock('wagmi', () => ({
   useConnect: () => ({
     connect: jest.fn(),
-    connectors: [{ uid: 'injected', name: 'Injected' }],
+    connectors: [{ uid: 'injected', name: 'Injected', getProvider: () => Promise.resolve({}) }],
     isPending: false,
     error: null,
   }),

@@ -3,12 +3,14 @@ import { render, screen } from '@testing-library/react';
 /* ------------------------------------------------------------------ */
 /*  Mock wagmi — connection error                                      */
 /* ------------------------------------------------------------------ */
+const providerNotFoundError = new Error('Provider not found.\n\nVersion: @wagmi/core@2.16.7');
+
 jest.mock('wagmi', () => ({
   useConnect: () => ({
     connect: jest.fn(),
-    connectors: [{ uid: 'injected', name: 'Injected' }],
+    connectors: [{ uid: 'injected', name: 'Injected', getProvider: () => Promise.resolve({}) }],
     isPending: false,
-    error: new Error('User rejected the request.'),
+    error: providerNotFoundError,
   }),
   useAccount: () => ({
     address: undefined,
@@ -23,9 +25,10 @@ jest.mock('wagmi', () => ({
 import { WalletConnect } from '@/components/wallet-connect';
 
 describe('WalletConnect — connection error', () => {
-  it('displays the error message when connection fails', () => {
+  it('displays a user-friendly message for ProviderNotFoundError', () => {
     render(<WalletConnect />);
 
-    expect(screen.getByText(/user rejected the request/i)).toBeInTheDocument();
+    expect(screen.getByText(/no wallet found/i)).toBeInTheDocument();
+    expect(screen.queryByText(/version/i)).not.toBeInTheDocument();
   });
 });
