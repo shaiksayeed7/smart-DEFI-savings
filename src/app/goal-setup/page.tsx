@@ -139,7 +139,7 @@ export default function GoalSetupPage() {
                 disabled={!goalText.trim()}
                 className="px-4 py-3 bg-gray-800 text-gray-300 rounded-xl text-sm hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
-                Parse
+                Apply
               </button>
             </div>
           </div>
