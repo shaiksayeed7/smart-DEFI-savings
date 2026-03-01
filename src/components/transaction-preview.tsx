@@ -6,6 +6,7 @@ interface TransactionPreviewProps {
   vaultName: string;
   vaultAddress?: string;
   estimatedGas: number;
+  chain?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -15,6 +16,7 @@ export function TransactionPreview({
   amount,
   vaultName,
   estimatedGas,
+  chain = 'Base',
   onConfirm,
   onCancel,
 }: TransactionPreviewProps) {
@@ -35,6 +37,10 @@ export function TransactionPreview({
           <div className="flex justify-between">
             <span className="text-gray-400">Vault</span>
             <span className="text-white">{vaultName}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Chain</span>
+            <span className="text-white">{chain}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Est. Gas Fee</span>

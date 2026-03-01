@@ -173,7 +173,7 @@ export default function DashboardPage() {
         {/* Primary Number — Total Portfolio Value */}
         <div className="text-center py-8">
           <p className="text-gray-400 text-sm mb-2">Total Portfolio Value</p>
-          <p className="text-5xl md:text-6xl font-bold tracking-tight">
+          <p className="font-bold tracking-tight" style={{ fontSize: '56px', lineHeight: 1.1 }}>
             ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           {deposited && (
