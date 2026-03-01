@@ -1,12 +1,13 @@
 'use client';
 
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export function WalletConnect() {
   const { connect, connectors, isPending, error } = useConnect();
   const { address, isConnected, chainId } = useAccount();
   const { disconnect } = useDisconnect();
+  const [providerAvailable, setProviderAvailable] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
@@ -17,6 +18,29 @@ export function WalletConnect() {
       if (error) console.error('[WalletConnect] error:', error.message);
     }
   }, [connectors, isConnected, address, chainId, error]);
+
+  // Check if any connector has an available wallet provider (e.g. MetaMask installed)
+  useEffect(() => {
+    let canceled = false;
+    async function checkProviders() {
+      for (const connector of connectors) {
+        if (typeof connector.getProvider === 'function') {
+          try {
+            const provider = await connector.getProvider();
+            if (provider) {
+              if (!canceled) setProviderAvailable(true);
+              return;
+            }
+          } catch {
+            // Provider not available for this connector
+          }
+        }
+      }
+      if (!canceled) setProviderAvailable(false);
+    }
+    checkProviders();
+    return () => { canceled = true; };
+  }, [connectors]);
 
   if (isConnected && address) {
     return (
@@ -34,10 +58,12 @@ export function WalletConnect() {
     );
   }
 
+  const noWalletDetected = providerAvailable === false || connectors.length === 0;
+
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="flex gap-2">
-        {connectors.length > 0 ? (
+        {!noWalletDetected ? (
           connectors.map((connector) => (
             <button
               key={connector.uid}
@@ -63,7 +89,11 @@ export function WalletConnect() {
         )}
       </div>
       {error && (
-        <p className="text-sm text-red-400">{error.message}</p>
+        <p className="text-sm text-red-400">
+          {error.message.startsWith('Provider not found')
+            ? 'No wallet found. Please install a Web3 wallet like MetaMask to connect.'
+            : error.message}
+        </p>
       )}
     </div>
   );

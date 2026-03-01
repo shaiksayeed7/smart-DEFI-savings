@@ -14,7 +14,7 @@ let mockAddress: `0x${string}` | undefined;
 jest.mock('wagmi', () => ({
   useConnect: () => ({
     connect: mockConnect,
-    connectors: [{ uid: 'injected', name: 'Injected' }],
+    connectors: [{ uid: 'injected', name: 'Injected', getProvider: () => Promise.resolve({}) }],
     isPending: false,
     error: null,
   }),

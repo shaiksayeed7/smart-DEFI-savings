@@ -16,7 +16,7 @@ let mockIsPending = false;
 jest.mock('wagmi', () => ({
   useConnect: () => ({
     connect: mockConnect,
-    connectors: [{ uid: 'injected', name: 'Injected' }],
+    connectors: [{ uid: 'injected', name: 'Injected', getProvider: () => Promise.resolve({}) }],
     isPending: mockIsPending,
     error: null,
   }),
@@ -41,27 +41,27 @@ describe('WalletConnect', () => {
     jest.clearAllMocks();
   });
 
-  it('renders a connect button when wallet is not connected', () => {
+  it('renders a connect button when wallet is not connected', async () => {
     render(<WalletConnect />);
-    expect(screen.getByRole('button', { name: /connect wallet/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /connect wallet/i })).toBeInTheDocument();
   });
 
   it('calls connect when the connect button is clicked', async () => {
     const user = userEvent.setup();
     render(<WalletConnect />);
 
-    await user.click(screen.getByRole('button', { name: /connect wallet/i }));
+    await user.click(await screen.findByRole('button', { name: /connect wallet/i }));
     expect(mockConnect).toHaveBeenCalledTimes(1);
     expect(mockConnect).toHaveBeenCalledWith(
       expect.objectContaining({ connector: expect.objectContaining({ uid: 'injected' }) }),
     );
   });
 
-  it('shows "Connecting..." when a connection is pending', () => {
+  it('shows "Connecting..." when a connection is pending', async () => {
     mockIsPending = true;
     render(<WalletConnect />);
 
-    const btn = screen.getByRole('button', { name: /connecting/i });
+    const btn = await screen.findByRole('button', { name: /connecting/i });
     expect(btn).toBeDisabled();
   });
 
