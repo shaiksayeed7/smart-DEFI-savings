@@ -17,18 +17,18 @@ const RING_COLORS = [
 ];
 
 export function AllocationRings({ allocations }: AllocationRingsProps) {
-  let cumulativePercent = 0;
+  const segments = allocations.reduce<{ alloc: Allocation; offset: number }[]>((acc, alloc) => {
+    const prevOffset = acc.length > 0 ? acc[acc.length - 1].offset + acc[acc.length - 1].alloc.percentage : 0;
+    acc.push({ alloc, offset: prevOffset });
+    return acc;
+  }, []);
 
   return (
     <div className="flex items-center gap-6">
       <div className="relative w-32 h-32">
-        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-          {allocations.map((alloc, i) => {
-            const vault = YO_VAULTS.find((v) => v.id === alloc.vaultId);
+        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90" suppressHydrationWarning>
+          {segments.map(({ alloc, offset }, i) => {
             const dashArray = `${alloc.percentage} ${100 - alloc.percentage}`;
-            const dashOffset = -cumulativePercent;
-            cumulativePercent += alloc.percentage;
-
             return (
               <circle
                 key={alloc.vaultId}
@@ -39,13 +39,9 @@ export function AllocationRings({ allocations }: AllocationRingsProps) {
                 stroke={RING_COLORS[i % RING_COLORS.length]}
                 strokeWidth="3"
                 strokeDasharray={dashArray}
-                strokeDashoffset={dashOffset}
+                strokeDashoffset={-offset}
                 strokeLinecap="round"
-              >
-                <title>
-                  {vault?.name || alloc.vaultId}: {alloc.percentage}%
-                </title>
-              </circle>
+              />
             );
           })}
         </svg>
