@@ -18,10 +18,12 @@ jest.mock('wagmi', () => ({
     connect: mockConnect,
     connectors: [{ uid: 'injected', name: 'Injected' }],
     isPending: mockIsPending,
+    error: null,
   }),
   useAccount: () => ({
     address: mockAddress,
     isConnected: mockIsConnected,
+    chainId: undefined,
   }),
   useDisconnect: () => ({
     disconnect: mockDisconnect,
