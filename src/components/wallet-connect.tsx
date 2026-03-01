@@ -21,14 +21,14 @@ export function WalletConnect() {
 
   // Check if any connector has an available wallet provider (e.g. MetaMask installed)
   useEffect(() => {
-    let cancelled = false;
+    let canceled = false;
     async function checkProviders() {
       for (const connector of connectors) {
         if (typeof connector.getProvider === 'function') {
           try {
             const provider = await connector.getProvider();
             if (provider) {
-              if (!cancelled) setProviderAvailable(true);
+              if (!canceled) setProviderAvailable(true);
               return;
             }
           } catch {
@@ -36,10 +36,10 @@ export function WalletConnect() {
           }
         }
       }
-      if (!cancelled) setProviderAvailable(false);
+      if (!canceled) setProviderAvailable(false);
     }
     checkProviders();
-    return () => { cancelled = true; };
+    return () => { canceled = true; };
   }, [connectors]);
 
   if (isConnected && address) {
