@@ -81,9 +81,10 @@ Displayed as: `Portfolio Confidence: 87 / 100`
 ### Local Setup
 
 ```bash
-# 1. Clone the repository
+# 1. Clone the repository and switch to the app branch
 git clone https://github.com/shaiksayeed7/smart-DEFI-savings.git
 cd smart-DEFI-savings
+git checkout copilot/add-typescript-sdk-for-yo-protocol
 
 # 2. Install dependencies
 npm install
@@ -136,6 +137,7 @@ src/
 
 ### Troubleshooting
 
+- **`Could not read package.json: ENOENT`** — You are likely on the `main` branch, which does not contain the application code yet. Run `git checkout copilot/add-typescript-sdk-for-yo-protocol` to switch to the branch with the full source.
 - **Port already in use** — Run `npm run dev -- -p 3001` to use a different port.
 - **Module not found errors** — Delete `node_modules` and `package-lock.json`, then run `npm install` again.
 - **TypeScript errors** — Run `npx tsc --noEmit` to see all type issues.
