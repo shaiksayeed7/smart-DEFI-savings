@@ -5,6 +5,7 @@ import { WalletConnect } from '@/components/wallet-connect';
 import { TransactionPreview } from '@/components/transaction-preview';
 import { TransactionStatus } from '@/components/transaction-status';
 import { BottomNav } from '@/components/bottom-nav';
+import { WalletGuard } from '@/components/wallet-guard';
 import { useRedeem } from '@/hooks/use-yo-protocol';
 import { Allocation } from '@/lib/types';
 import { YO_VAULTS } from '@/lib/vaults';
@@ -53,6 +54,7 @@ export default function WithdrawPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-6 py-6 space-y-6">
+        <WalletGuard>
         <h1 className="text-2xl font-bold">Withdraw Funds</h1>
         <p className="text-gray-400 text-sm">
           Your Agent will redeem from your vault positions proportionally. Funds go directly to your
@@ -157,6 +159,7 @@ export default function WithdrawPage() {
             Withdraw 50%
           </button>
         </div>
+        </WalletGuard>
       </main>
 
       {/* Preview Modal */}

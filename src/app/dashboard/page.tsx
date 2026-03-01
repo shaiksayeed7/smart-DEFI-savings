@@ -11,6 +11,7 @@ import { RiskDial } from '@/components/risk-dial';
 import { TransactionPreview } from '@/components/transaction-preview';
 import { TransactionStatus } from '@/components/transaction-status';
 import { BottomNav } from '@/components/bottom-nav';
+import { WalletGuard } from '@/components/wallet-guard';
 import { useDeposit } from '@/hooks/use-yo-protocol';
 import { RiskTier, AgentAction, Allocation, UserGoal } from '@/lib/types';
 import { generateProposal, computeProjectedApy } from '@/lib/allocation-engine';
@@ -143,6 +144,7 @@ export default function DashboardPage() {
   if (!goal) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <WalletGuard>
         <div className="text-center">
           <p className="text-gray-400 mb-4">No goal set yet.</p>
           <a
@@ -152,6 +154,7 @@ export default function DashboardPage() {
             Set Your Goal
           </a>
         </div>
+        </WalletGuard>
       </div>
     );
   }
@@ -166,6 +169,7 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-6 py-6 space-y-6">
+        <WalletGuard>
         {/* Primary Number — Total Portfolio Value */}
         <div className="text-center py-8">
           <p className="text-gray-400 text-sm mb-2">Total Portfolio Value</p>
@@ -250,6 +254,7 @@ export default function DashboardPage() {
             </p>
           </div>
         )}
+        </WalletGuard>
       </main>
 
       {/* Transaction Preview Modal */}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AgentActivityFeed } from '@/components/agent-activity-feed';
 import { BottomNav } from '@/components/bottom-nav';
 import { WalletConnect } from '@/components/wallet-connect';
+import { WalletGuard } from '@/components/wallet-guard';
 import { AgentAction } from '@/lib/types';
 
 const SAMPLE_ACTIONS: AgentAction[] = [
@@ -69,6 +70,7 @@ export default function AgentFeedPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-6 py-6">
+        <WalletGuard>
         <h1 className="text-2xl font-bold mb-2">Agent Activity Feed</h1>
         <p className="text-gray-400 text-sm mb-6">
           Every decision your Agent makes is logged here with a verifiable transaction hash.
@@ -81,6 +83,7 @@ export default function AgentFeedPage() {
             All actions map to real YO SDK calls. Click any transaction hash to verify on BaseScan.
           </p>
         </div>
+        </WalletGuard>
       </main>
 
       <BottomNav />

@@ -7,6 +7,7 @@ import { WalletConnect } from '@/components/wallet-connect';
 import { AllocationRings } from '@/components/allocation-rings';
 import { RiskScoreBadge } from '@/components/risk-score-badge';
 import { ConfidenceScore } from '@/components/confidence-score';
+import { WalletGuard } from '@/components/wallet-guard';
 import { RiskTier } from '@/lib/types';
 import { generateProposal } from '@/lib/allocation-engine';
 import { computePortfolioRiskScore } from '@/lib/risk-scoring';
@@ -50,6 +51,7 @@ export default function GoalSetupPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-6 py-8">
+        <WalletGuard>
         <h1 className="text-3xl font-bold mb-2">Set Your Savings Goal</h1>
         <p className="text-gray-400 mb-8">
           Tell your Agent how much you want to grow, and how safe you want to play it.
@@ -150,6 +152,7 @@ export default function GoalSetupPage() {
             Approve &amp; Deposit →
           </button>
         </div>
+        </WalletGuard>
       </main>
     </div>
   );
