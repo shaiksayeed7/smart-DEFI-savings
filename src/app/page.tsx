@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { WalletConnect } from '@/components/wallet-connect';
 import { useAccount } from 'wagmi';
@@ -7,6 +8,11 @@ import { YO_VAULTS } from '@/lib/vaults';
 
 export default function LandingPage() {
   const { isConnected } = useAccount();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -36,7 +42,7 @@ export default function LandingPage() {
             and let the AI agent handle the rest — real deposits, live yields, transparent decisions.
           </p>
 
-          {isConnected ? (
+          {mounted && isConnected ? (
             <Link
               href="/goal-setup"
               className="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg rounded-xl font-semibold hover:from-blue-500 hover:to-purple-500 transition-all"
