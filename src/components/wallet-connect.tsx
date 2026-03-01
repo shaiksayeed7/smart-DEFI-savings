@@ -9,11 +9,13 @@ export function WalletConnect() {
   const { disconnect } = useDisconnect();
 
   useEffect(() => {
-    console.log('[WalletConnect] connectors:', connectors.map((c) => c.name));
-    console.log('[WalletConnect] isConnected:', isConnected);
-    console.log('[WalletConnect] address:', address);
-    console.log('[WalletConnect] chainId:', chainId);
-    if (error) console.error('[WalletConnect] error:', error.message);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[WalletConnect] connectors:', connectors.map((c) => c.name));
+      console.log('[WalletConnect] isConnected:', isConnected);
+      console.log('[WalletConnect] address:', address);
+      console.log('[WalletConnect] chainId:', chainId);
+      if (error) console.error('[WalletConnect] error:', error.message);
+    }
   }, [connectors, isConnected, address, chainId, error]);
 
   if (isConnected && address) {

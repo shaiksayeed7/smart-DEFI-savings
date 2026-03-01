@@ -21,7 +21,9 @@ export function WalletGuard({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    console.log('[WalletGuard] status:', status, 'isConnected:', isConnected);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[WalletGuard] status:', status, 'isConnected:', isConnected);
+    }
   }, [status, isConnected]);
 
   // Avoid hydration mismatch: render nothing on the server
