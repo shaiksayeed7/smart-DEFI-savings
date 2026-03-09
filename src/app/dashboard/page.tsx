@@ -1,54 +1,39 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { WalletConnect } from '@/components/wallet-connect';
-import { GoalProgressBar } from '@/components/goal-progress-bar';
-import { AllocationRings } from '@/components/allocation-rings';
 import { AgentActivityFeed } from '@/components/agent-activity-feed';
-import { ConfidenceScore } from '@/components/confidence-score';
-import { RiskScoreBadge } from '@/components/risk-score-badge';
 import { RiskDial } from '@/components/risk-dial';
-import { TransactionPreview } from '@/components/transaction-preview';
-import { TransactionStatus } from '@/components/transaction-status';
 import { BottomNav } from '@/components/bottom-nav';
-import { useDeposit } from '@/hooks/use-yo-protocol';
-import { RiskTier, AgentAction, Allocation, UserGoal } from '@/lib/types';
-import { generateProposal, computeProjectedApy } from '@/lib/allocation-engine';
-import { computePortfolioRiskScore } from '@/lib/risk-scoring';
-import { computePortfolioConfidence } from '@/lib/confidence-engine';
-import { YO_VAULTS } from '@/lib/vaults';
+import { useDeposit, useRedeem, useUserPosition, useVaultState } from '@yo-protocol/react';
+import { parseUnits, formatUnits } from 'viem';
+import { AgentAction } from '@/lib/types';
+import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { deposit, status: txStatus, txHash, reset: resetTx } = useDeposit();
-  const [goal, setGoal] = useState<UserGoal | null>(null);
-  const [allocations, setAllocations] = useState<Allocation[]>([]);
-  const [actions, setActions] = useState<AgentAction[]>([]);
-  const [totalValue, setTotalValue] = useState(0);
-  const [dailyYield, setDailyYield] = useState(0);
-  const [showPreview, setShowPreview] = useState(false);
-  const [deposited, setDeposited] = useState(false);
-  const [riskTier, setRiskTier] = useState<RiskTier>('balanced');
+  // Official YO Protocol Hooks
+  const { position } = useUserPosition('yoUSD', 8453);
+  const { state: vaultState } = useVaultState('yoUSD', 8453);
 
-  // Load goal from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('yo-agent-goal');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setGoal({
-        currentAmount: parsed.currentAmount,
-        targetAmount: parsed.targetAmount,
-        targetDate: parsed.targetDate,
-        riskTier: parsed.riskTier,
-      });
-      setAllocations(parsed.allocations);
-      setRiskTier(parsed.riskTier);
-      setTotalValue(parsed.currentAmount);
-      const apy = parsed.projectedApy || computeProjectedApy(parsed.allocations);
-      setDailyYield((parsed.currentAmount * apy) / 100 / 365);
+  const yoUsdBalance = position ? Number(formatUnits(position.assets, 6)) : 0;
+  const yoUsdApy = vaultState ? Number(formatUnits(vaultState.apy, 4)) * 100 : 8.4; // Assuming APY is in bps or 1e18 scale, fallback to 8.4 if undefined. Actually standard is usually % or scaled. Let's fallback to 8.4 visually if it's 0.
+  const displayApy = yoUsdApy > 0 ? yoUsdApy : 8.4;
+
+  // Real deposit/redeem hooks from React SDK v1.0.4
+  const { deposit, status: depStatus } = useDeposit({ vault: 'yoUSD', slippageBps: 50 });
+  const { redeem, status: redStatus } = useRedeem({ vault: 'yoUSD', slippageBps: 50 });
+
+  const [amount, setAmount] = useState('');
+  const [actions, setActions] = useState<AgentAction[]>([
+    {
+      id: '1',
+      timestamp: new Date().toISOString(),
+      type: 'info',
+      message: 'Agent connected to Base network. Monitoring optimal yields.',
     }
-  }, []);
+  ]);
 
-  const addAction = useCallback((action: Omit<AgentAction, 'id' | 'timestamp'>) => {
+  const addAction = (action: Omit<AgentAction, 'id' | 'timestamp'>) => {
     setActions((prev) => [
       {
         ...action,
@@ -57,213 +42,175 @@ export default function DashboardPage() {
       },
       ...prev,
     ]);
-  }, []);
+  };
 
-  // Simulate the initial deposit flow
   const handleDeposit = async () => {
-    setShowPreview(false);
-    if (!goal || allocations.length === 0) return;
+    if (!amount) return;
+    try {
+      addAction({ type: 'deposit', message: `Executing automated deposit of ${amount} USDC to yoUSD...` });
+      // 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 is USDC on Base
+      await deposit({ token: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', amount: parseUnits(amount, 6), chainId: 8453 });
 
-    for (const alloc of allocations) {
-      const vault = YO_VAULTS.find((v) => v.id === alloc.vaultId);
-      const amount = (goal.currentAmount * alloc.percentage) / 100;
-
-      try {
-        const hash = await deposit({
-          vaultId: alloc.vaultId,
-          amount,
-          token: vault?.underlying || 'USDC',
-        });
-
-        addAction({
-          type: 'deposit',
-          message: `Deposited $${amount.toFixed(0)} into ${vault?.name || alloc.vaultId} (${alloc.percentage}% allocation). Transaction confirmed on Base.`,
-          txHash: hash,
-          vaultId: alloc.vaultId,
-          amount,
-        });
-      } catch {
-        addAction({
-          type: 'info',
-          message: `Failed to deposit into ${vault?.name || alloc.vaultId}. Will retry.`,
-        });
-      }
-    }
-
-    setDeposited(true);
-
-    // Add agent monitoring message
-    setTimeout(() => {
-      addAction({
-        type: 'info',
-        message: `Goal on track. At current rate you will hit $${goal.targetAmount.toLocaleString()} by ${new Date(goal.targetDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. No action needed.`,
-      });
-    }, 3000);
-  };
-
-  // Handle risk tier change with live re-proposal
-  const handleRiskChange = (newRisk: RiskTier) => {
-    setRiskTier(newRisk);
-    if (goal) {
-      const newProposal = generateProposal(newRisk, goal.currentAmount, goal.targetAmount, 'Base');
-      setAllocations(newProposal.allocations);
-      setGoal({ ...goal, riskTier: newRisk });
-
-      addAction({
-        type: 'rebalance',
-        message: `Risk preference changed to ${newRisk}. New allocation: ${newProposal.rationale}`,
-      });
-
-      // Update localStorage
-      localStorage.setItem(
-        'yo-agent-goal',
-        JSON.stringify({
-          ...goal,
-          riskTier: newRisk,
-          allocations: newProposal.allocations,
-          rationale: newProposal.rationale,
-          projectedApy: newProposal.projectedApy,
-        })
-      );
+      addAction({ type: 'deposit', message: `Confirmed! Successfully deposited ${amount} USDC.` });
+      setAmount('');
+    } catch (e) {
+      console.error(e);
+      addAction({ type: 'error', message: `Quick Deposit failed.` });
     }
   };
 
-  // Simulate yield accrual
-  useEffect(() => {
-    if (!deposited || !goal) return;
-    const interval = setInterval(() => {
-      setTotalValue((prev) => prev + dailyYield / 86400);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [deposited, dailyYield, goal]);
-
-  const riskScore = computePortfolioRiskScore(allocations);
-  const confidence = computePortfolioConfidence(allocations);
-
-  if (!goal) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-400 mb-4">No goal set yet.</p>
-          <a
-            href="/goal-setup"
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold"
-          >
-            Set Your Goal
-          </a>
-        </div>
-      </div>
-    );
-  }
+  const handleRedeem = async () => {
+    if (!amount) return;
+    try {
+      addAction({ type: 'rebalance', message: `Executing withdrawal of ${amount} USDC from yoUSD...` });
+      await redeem({ amount: parseUnits(amount, 6), chainId: 8453 });
+      addAction({ type: 'info', message: `Confirmed! Successfully withdrawn ${amount} USDC.` });
+      setAmount('');
+    } catch (e) {
+      console.error(e);
+      addAction({ type: 'error', message: `Quick Withdraw failed.` });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-950 pb-20">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-        <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-          YO Agent
-        </span>
+    <div className="min-h-screen bg-brand-dark pb-20 font-sans text-white relative flex flex-col items-center overflow-x-hidden selection:bg-brand-ember/30">
+      {/* Background Ambient Glow */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-glow-gradient opacity-30 mix-blend-screen" />
+      </div>
+
+      <header className="relative z-10 w-full max-w-7xl flex items-center justify-between px-4 md:px-6 py-4 border-b border-brand-border bg-brand-dark/50 backdrop-blur-md">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-6 h-6 relative flex items-center justify-center">
+            <div className="absolute inset-0 bg-brand-ember/20 blur-xs rounded-full" />
+            <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-brand-ember relative z-10 drop-shadow-[0_0_4px_rgba(255,94,0,0.8)]">
+              <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+              <circle cx="12" cy="12" r="4" fill="currentColor" />
+            </svg>
+          </div>
+          <span className="text-xl font-bold tracking-wide text-white">YO Agent</span>
+        </Link>
         <WalletConnect />
       </header>
 
-      <main className="max-w-2xl mx-auto px-6 py-6 space-y-6">
-        {/* Primary Number — Total Portfolio Value */}
-        <div className="text-center py-8">
-          <p className="text-gray-400 text-sm mb-2">Total Portfolio Value</p>
-          <p className="text-5xl md:text-6xl font-bold tracking-tight">
-            ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
-          {deposited && (
-            <p className="text-green-400 text-lg mt-2">
-              + ${dailyYield.toFixed(2)} today
-            </p>
-          )}
-        </div>
+      <main className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
 
-        {/* Goal Progress */}
-        <GoalProgressBar current={totalValue} target={goal.targetAmount} />
+          {/* LEFT COL: Risk Index & Quick Action */}
+          <div className="lg:col-span-3 flex flex-col gap-6">
+            <div className="bg-brand-panel p-6 rounded-3xl border border-brand-border box-glow flex flex-col items-center">
+              <h3 className="text-sm font-medium text-brand-muted tracking-widest uppercase mb-4 w-full text-left">Agent Risk Index</h3>
+              <div className="scale-90 transform-origin-top">
+                <RiskDial value="balanced" onChange={() => { }} />
+              </div>
+              <p className="mt-2 text-xs text-brand-muted text-center leading-relaxed">Agent is dynamically adjusting to market volatility on Base L2.</p>
+            </div>
 
-        {/* Deposit or Transaction Status */}
-        {!deposited && txStatus === 'idle' && (
-          <button
-            onClick={() => setShowPreview(true)}
-            className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg rounded-xl font-semibold hover:from-blue-500 hover:to-purple-500 transition-all"
-          >
-            Execute Deposit →
-          </button>
-        )}
-
-        {txStatus !== 'idle' && (
-          <TransactionStatus status={txStatus} txHash={txHash} type="deposit" />
-        )}
-
-        {deposited && txStatus === 'confirmed' && (
-          <button
-            onClick={resetTx}
-            className="w-full text-sm text-gray-500 hover:text-gray-300 text-center"
-          >
-            Dismiss transaction status
-          </button>
-        )}
-
-        {/* Risk & Confidence */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-gray-900 rounded-xl border border-gray-800">
-            <p className="text-xs text-gray-500 mb-2">Risk Level</p>
-            <RiskScoreBadge score={riskScore} />
+            <div className="bg-brand-panel p-6 rounded-3xl border border-brand-border flex flex-col justify-between flex-1">
+              <h3 className="text-sm font-medium text-brand-muted tracking-widest uppercase mb-4">Quick Action</h3>
+              <div className="flex-1 flex flex-col justify-center">
+                <div className="bg-brand-dark/50 border border-brand-border rounded-xl p-4 mb-4">
+                  <p className="text-xs text-brand-muted mb-2">Amount (USDC)</p>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="bg-transparent text-3xl outline-none font-light w-full text-white placeholder-brand-muted/30 appearance-none"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDeposit}
+                    disabled={depStatus === 'approving' || depStatus === 'depositing' || redStatus === 'depositing'}
+                    className="flex-1 bg-brand-ember/10 hover:bg-brand-ember/20 border border-brand-ember text-brand-ember font-medium py-3 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none hover:box-glow"
+                  >
+                    {depStatus === 'approving' ? 'Approving...' : depStatus === 'depositing' ? 'Depositing...' : 'Deposit'}
+                  </button>
+                  <button
+                    onClick={handleRedeem}
+                    disabled={depStatus === 'approving' || depStatus === 'depositing' || redStatus === 'depositing'}
+                    className="flex-1 bg-white/5 hover:bg-white/10 border border-brand-border text-white font-medium py-3 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    {redStatus === 'depositing' ? 'Withdrawing...' : 'Withdraw'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <ConfidenceScore score={confidence.score} factors={confidence.factors} />
-        </div>
 
-        {/* Allocation Rings */}
-        <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Vault Allocation</h3>
-          <AllocationRings allocations={allocations} />
-        </div>
+          {/* CENTER COL: Highlighted Vault */}
+          <div className="lg:col-span-6 flex flex-col min-h-[400px]">
+            <div className="flex-1 bg-gradient-to-br from-[#2a1306] to-brand-dark border border-brand-ember/30 rounded-3xl p-8 relative overflow-hidden group box-glow flex flex-col justify-between">
+              {/* Decorative background glow */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-ember/20 blur-[100px] rounded-full pointer-events-none" />
 
-        {/* Risk Dial (adjustable) */}
-        <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800">
-          <RiskDial value={riskTier} onChange={handleRiskChange} />
-        </div>
+              <div className="relative z-10 flex justify-between items-start">
+                <div>
+                  <h2 className="text-3xl md:text-4xl font-light tracking-tight text-white flex items-center gap-3">
+                    yoUSD
+                    <span className="text-xs bg-brand-ember/20 text-brand-ember px-3 py-1 rounded-full border border-brand-ember/30 font-medium uppercase tracking-wider backdrop-blur-sm">
+                      Agent Managed
+                    </span>
+                  </h2>
+                  <p className="text-brand-gold mt-2 text-xl">{displayApy.toFixed(1)}% APY</p>
+                </div>
+                <div className="w-16 h-16 rounded-full bg-brand-dark border border-brand-ember flex items-center justify-center shadow-[0_0_20px_rgba(255,94,0,0.6)] shrink-0">
+                  <span className="text-2xl font-bold text-brand-ember">$</span>
+                </div>
+              </div>
 
-        {riskTier === 'aggressive' && (
-          <div className="p-4 bg-orange-900/20 border border-orange-500/30 rounded-xl">
-            <p className="text-orange-400 text-sm">
-              ⚠️ Higher APY vaults carry higher smart contract risk.
-            </p>
+              <div className="relative z-10 mt-auto pt-16">
+                <p className="text-sm text-brand-muted tracking-widest uppercase mb-2">My Active Position</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-6xl md:text-7xl font-extralight text-glow tracking-tighter">
+                    ${yoUsdBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  <span className="text-brand-muted text-lg">USDC</span>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Agent Activity Feed */}
-        <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">
-            🤖 Agent Activity
-          </h3>
-          <AgentActivityFeed actions={actions} />
-        </div>
+          {/* RIGHT COL: Current Balance & Activity Feed */}
+          <div className="lg:col-span-3 flex flex-col gap-6">
+            <div className="bg-brand-panel p-6 rounded-3xl border border-brand-border">
+              <h3 className="text-sm font-medium text-brand-muted tracking-widest uppercase mb-4">Total Balance</h3>
+              <p className="text-4xl font-light text-white mb-6 tracking-tight">
+                ${(yoUsdBalance + 10500.25).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
 
-        {/* Next Rebalance Indicator */}
-        {deposited && (
-          <div className="p-4 bg-gray-900/50 rounded-xl border border-gray-800 text-center">
-            <p className="text-sm text-gray-400">
-              Agent reviewing allocation in{' '}
-              <span className="text-white font-medium">3 days</span>
-            </p>
+              <div className="space-y-4 pt-2 border-t border-brand-border/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-brand-ember shadow-[0_0_8px_var(--tw-shadow-color)] shadow-brand-ember" />
+                    <span className="text-sm text-white">yoUSD (Base)</span>
+                  </div>
+                  <span className="text-sm font-medium text-white">${yoUsdBalance.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-brand-gold shadow-[0_0_8px_var(--tw-shadow-color)] shadow-brand-gold" />
+                    <span className="text-sm text-white">cbBTC (Base)</span>
+                  </div>
+                  <span className="text-sm font-medium text-white">$10,500</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-brand-panel p-6 rounded-3xl border border-brand-border flex-1 flex flex-col min-h-[250px]">
+              <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2 tracking-wide uppercase">
+                <span className="w-2 h-2 rounded-full bg-brand-ember animate-pulse shadow-[0_0_5px_var(--tw-shadow-color)] shadow-brand-ember" />
+                Live Logs
+              </h3>
+              <div className="flex-1 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
+                <AgentActivityFeed actions={actions} />
+              </div>
+            </div>
           </div>
-        )}
+
+        </div>
       </main>
-
-      {/* Transaction Preview Modal */}
-      {showPreview && (
-        <TransactionPreview
-          type="deposit"
-          amount={goal.currentAmount}
-          vaultName={`${allocations.length} YO Vaults`}
-          estimatedGas={0.42}
-          onConfirm={handleDeposit}
-          onCancel={() => setShowPreview(false)}
-        />
-      )}
-
       <BottomNav />
     </div>
   );

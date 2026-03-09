@@ -8,12 +8,12 @@ interface AllocationRingsProps {
 }
 
 const RING_COLORS = [
-  '#3B82F6', // blue
-  '#8B5CF6', // purple
-  '#10B981', // green
-  '#F59E0B', // amber
-  '#EF4444', // red
-  '#06B6D4', // cyan
+  '#ff5e00', // brand ember
+  '#ffb800', // brand gold
+  '#888888', // brand muted
+  '#ffffff', // white
+  '#222222', // brand border
+  '#ff8c42', // light ember
 ];
 
 export function AllocationRings({ allocations }: AllocationRingsProps) {
@@ -26,7 +26,7 @@ export function AllocationRings({ allocations }: AllocationRingsProps) {
   return (
     <div className="flex items-center gap-6">
       <div className="relative w-32 h-32">
-        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90" suppressHydrationWarning>
+        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90 drop-shadow-[0_0_8px_rgba(255,94,0,0.5)]" suppressHydrationWarning>
           {segments.map(({ alloc, offset }, i) => {
             const dashArray = `${alloc.percentage} ${100 - alloc.percentage}`;
             return (
@@ -55,11 +55,11 @@ export function AllocationRings({ allocations }: AllocationRingsProps) {
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: RING_COLORS[i % RING_COLORS.length] }}
               />
-              <span className="text-gray-300">
+              <span className="text-white">
                 {vault?.name || alloc.vaultId}{' '}
-                <span className="text-gray-500">({vault?.underlying})</span>
+                <span className="text-brand-muted">({vault?.underlying})</span>
               </span>
-              <span className="text-white font-medium ml-auto">{alloc.percentage}%</span>
+              <span className="text-white font-medium ml-auto flex items-center">{alloc.percentage}%</span>
             </div>
           );
         })}
