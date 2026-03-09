@@ -15,154 +15,160 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            YO Agent
-          </span>
-        </div>
-        <WalletConnect />
-      </header>
+    <div className="min-h-screen bg-brand-dark text-white selection:bg-brand-ember/30 overflow-hidden font-sans">
 
-      {/* Hero */}
-      <main className="max-w-4xl mx-auto px-6 py-16">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-            Set a goal.{' '}
-            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Meet your Agent.
-            </span>
-            <br />
-            Watch your money work.
+      {/* Background Ambient Glow */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-glow-gradient opacity-60 mix-blend-screen" />
+      </div>
+
+      {/* Navigation */}
+      <nav className="relative z-10 flex items-center justify-between px-8 py-6 border-b border-brand-border/50 bg-brand-dark/50 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          {/* Logo Hexagon */}
+          <div className="w-8 h-8 relative flex items-center justify-center">
+            <div className="absolute inset-0 bg-brand-ember/20 blur-sm rounded-full" />
+            <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-brand-ember relative z-10 drop-shadow-[0_0_8px_rgba(255,94,0,0.8)]">
+              <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+              <circle cx="12" cy="12" r="4" fill="currentColor" />
+            </svg>
+          </div>
+          <span className="text-xl font-bold tracking-wide text-white">YO Agent</span>
+        </div>
+
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-brand-muted">
+          <Link href="#vaults" className="hover:text-white transition-colors">Vaults</Link>
+          <Link href="#infrastructure" className="hover:text-white transition-colors">Infrastructure</Link>
+          <Link href="#features" className="hover:text-white transition-colors">Features</Link>
+          <Link href="#contact" className="hover:text-white transition-colors">Contact</Link>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <WalletConnect />
+        </div>
+      </nav>
+
+      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-24 flex flex-col items-center">
+
+        {/* Hero Text */}
+        <div className="text-center max-w-3xl mb-16 relative">
+          <p className="text-brand-ember font-semibold tracking-[0.2em] text-xs uppercase mb-6 animate-pulse">
+            Join the Revolution
+          </p>
+          <h1 className="text-5xl md:text-7xl font-medium mb-6 leading-[1.1] tracking-tight text-glow">
+            Setting a New Standard <br /> in DeFi Savings
           </h1>
-          <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-            YO Agent is an autonomous DeFi savings account. Tell it your goal, pick your risk level,
-            and let the AI agent handle the rest — real deposits, live yields, transparent decisions.
+          <p className="text-lg text-brand-muted mb-10 max-w-2xl mx-auto leading-relaxed">
+            Our autonomous agent delivers unmatched yield optimization on Base & Ethereum, making digital savings more effective and completely hands-off.
           </p>
 
-          {mounted && isConnected ? (
+          <div className="flex justify-center gap-4">
             <Link
-              href="/goal-setup"
-              className="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg rounded-xl font-semibold hover:from-blue-500 hover:to-purple-500 transition-all"
+              href="/dashboard"
+              className="px-8 py-3.5 bg-brand-border text-white rounded-lg font-semibold hover:bg-brand-ember hover:text-white transition-all duration-300 border border-brand-border hover:border-brand-ember hover:box-glow"
             >
-              Get Started →
+              Enter Dashboard
             </Link>
-          ) : (
-            <div className="space-y-4">
-              <WalletConnect />
-              <p className="text-sm text-gray-500">Connect your wallet to begin</p>
+          </div>
+        </div>
+
+        {/* Hero Visual Centerpiece (CSS Simulated 3D Hexagon/Orb) */}
+        <div className="relative w-64 h-64 my-12 flex justify-center items-center">
+          <div className="absolute w-full h-full bg-brand-ember blur-[100px] opacity-20 rounded-full animate-pulse" />
+          <div className="relative z-10 w-32 h-32 border-2 border-brand-ember/80 transform rotate-45 flex items-center justify-center box-glow shadow-[inset_0_0_20px_rgba(255,94,0,0.5)]">
+            <div className="w-24 h-24 border border-brand-gold/50 flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-brand-ember to-brand-gold blur-sm rotate-45" />
             </div>
-          )}
-        </div>
-
-        {/* Value Props */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800">
-            <div className="text-3xl mb-4">🎯</div>
-            <h3 className="text-lg font-semibold mb-2">Goal-Based Savings</h3>
-            <p className="text-gray-400 text-sm">
-              No APY tables. No vault dashboards. Just tell us how much you want to grow and when.
-            </p>
-          </div>
-          <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800">
-            <div className="text-3xl mb-4">🤖</div>
-            <h3 className="text-lg font-semibold mb-2">AI-Powered Agent</h3>
-            <p className="text-gray-400 text-sm">
-              Your agent monitors yields, detects shifts, and proposes optimal allocations in plain
-              English.
-            </p>
-          </div>
-          <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800">
-            <div className="text-3xl mb-4">🔗</div>
-            <h3 className="text-lg font-semibold mb-2">Real On-Chain</h3>
-            <p className="text-gray-400 text-sm">
-              Every transaction is verifiable. Real deposits into YO Protocol vaults on Base and
-              Ethereum.
-            </p>
           </div>
         </div>
 
-        {/* Vault Highlights */}
-        <div className="mb-16">
-          <h2 className="text-2xl font-bold text-center mb-8">Supported Vaults</h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {YO_VAULTS.slice(0, 6).map((vault) => (
-              <div
-                key={vault.id}
-                className="p-4 bg-gray-900/50 rounded-xl border border-gray-800 hover:border-gray-700 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-white">{vault.name}</span>
-                  <span className="text-green-400 font-medium">{vault.apy}% APY</span>
+        {/* Data Cards mimicking "Stock Prices" section */}
+        <div className="grid md:grid-cols-2 gap-6 w-full max-w-4xl opacity-90 hover:opacity-100 transition-opacity">
+
+          {/* Card 1 */}
+          <div className="bg-brand-panel/60 backdrop-blur-xl border border-brand-border p-6 rounded-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-ember/10 blur-3xl group-hover:bg-brand-ember/20 transition-all" />
+
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1">YO Protocol TVL</h3>
+                <p className="text-xs text-brand-muted">Total Value Locked</p>
+              </div>
+              <span className="text-xs px-2 py-1 bg-brand-dark rounded border border-brand-border text-brand-muted">On-Chain Data</span>
+            </div>
+
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/50">
+                    <span className="text-blue-400 text-xs font-bold">B</span>
+                  </div>
+                  <span className="text-sm text-brand-muted">Base & Eth</span>
                 </div>
-                <p className="text-xs text-gray-500">{vault.description}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs px-2 py-0.5 bg-gray-800 rounded text-gray-400">
-                    {vault.underlying}
-                  </span>
-                  {vault.chains.map((chain) => (
-                    <span
-                      key={chain}
-                      className="text-xs px-2 py-0.5 bg-blue-900/30 rounded text-blue-400"
-                    >
-                      {chain}
-                    </span>
-                  ))}
+                <div className="text-3xl font-light tracking-tight text-white mt-2">
+                  $350.4M
                 </div>
+              </div>
+              <div className="text-right">
+                <div className="text-brand-ember text-sm font-medium flex items-center justify-end gap-1 text-glow">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12l5 5L20 7" /></svg>
+                  24.5% 30d
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div className="bg-brand-panel/60 backdrop-blur-xl border border-brand-border p-6 rounded-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold/10 blur-3xl group-hover:bg-brand-gold/20 transition-all" />
+
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1">yoUSD Yield</h3>
+                <p className="text-xs text-brand-muted">Current APY</p>
+              </div>
+              <span className="text-xs px-2 py-1 bg-brand-dark rounded border border-brand-border text-brand-muted text-glow">Live Data</span>
+            </div>
+
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="text-3xl font-light tracking-tight text-white mb-1">
+                  8.4%
+                </div>
+                <div className="text-sm text-brand-muted">
+                  Stablecoin Vault
+                </div>
+              </div>
+              <div className="w-32 h-12 relative flex items-end">
+                {/* Mock Chart Line */}
+                <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none" className="overflow-visible">
+                  <path d="M0,25 Q10,20 20,25 T40,15 T60,20 T80,5 T100,10" fill="none" stroke="#ff5e00" strokeWidth="2"
+                    className="drop-shadow-[0_0_8px_rgba(255,94,0,0.8)]" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Crypto Universe Section */}
+        <div className="mt-32 w-full text-center">
+          <p className="text-brand-ember font-bold text-[10px] tracking-[0.3em] uppercase mb-4">Supported Assets</p>
+          <h2 className="text-3xl font-medium mb-12">Entire DeFi Universe</h2>
+
+          <div className="flex flex-wrap justify-center gap-4 opacity-70">
+            {YO_VAULTS.map(vault => (
+              <div key={vault.id} className="w-12 h-12 rounded-lg bg-brand-panel border border-brand-border flex items-center justify-center text-xs font-bold text-brand-muted hover:text-white hover:border-brand-ember transition-colors cursor-pointer" title={vault.name}>
+                {vault.underlying.slice(0, 3)}
               </div>
             ))}
           </div>
+          <p className="text-sm text-brand-muted mt-12 max-w-xl mx-auto">
+            Experience a comprehensive selection of vaults available on our platform. Manage your investments with confidence and enhance your returns with meticulous precision.
+          </p>
         </div>
 
-        {/* Competitive Positioning */}
-        <div className="mb-16">
-          <h2 className="text-2xl font-bold text-center mb-8">Why YO Agent Wins</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-800">
-                  <th className="text-left py-3 px-4 text-gray-400">Platform</th>
-                  <th className="text-left py-3 px-4 text-gray-400">UX Model</th>
-                  <th className="text-left py-3 px-4 text-gray-400">Cognitive Load</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-3 px-4 text-gray-300">Aave</td>
-                  <td className="py-3 px-4 text-gray-400">Market-based lending</td>
-                  <td className="py-3 px-4 text-red-400">High</td>
-                </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-3 px-4 text-gray-300">Compound</td>
-                  <td className="py-3 px-4 text-gray-400">Rate table</td>
-                  <td className="py-3 px-4 text-red-400">High</td>
-                </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-3 px-4 text-gray-300">Yearn</td>
-                  <td className="py-3 px-4 text-gray-400">Strategy vaults</td>
-                  <td className="py-3 px-4 text-yellow-400">Medium</td>
-                </tr>
-                <tr className="bg-blue-900/10 border border-blue-500/20 rounded">
-                  <td className="py-3 px-4 text-white font-semibold">YO Agent</td>
-                  <td className="py-3 px-4 text-blue-400">Goal-based AI allocator</td>
-                  <td className="py-3 px-4 text-green-400 font-semibold">Low</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-800 py-8 text-center text-gray-500 text-sm">
-        <p>
-          Built on{' '}
-          <span className="text-blue-400">YO Protocol</span> | Base &amp; Ethereum |{' '}
-          <span className="text-gray-400">ERC-4626 Vaults</span>
-        </p>
-      </footer>
     </div>
   );
 }
