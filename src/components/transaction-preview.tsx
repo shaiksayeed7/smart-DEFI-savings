@@ -39,6 +39,10 @@ export function TransactionPreview({
             <span className="text-white">{vaultName}</span>
           </div>
           <div className="flex justify-between">
+            <span className="text-brand-muted">Network</span>
+            <span className="text-white">{chain}</span>
+          </div>
+          <div className="flex justify-between">
             <span className="text-brand-muted">Est. Gas Fee</span>
             <span className="text-white">${estimatedGas.toFixed(2)}</span>
           </div>
