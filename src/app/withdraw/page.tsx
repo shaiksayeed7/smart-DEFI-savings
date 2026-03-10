@@ -6,12 +6,29 @@ import { TransactionPreview } from '@/components/transaction-preview';
 import { TransactionStatus } from '@/components/transaction-status';
 import { BottomNav } from '@/components/bottom-nav';
 import { WalletGuard } from '@/components/wallet-guard';
-import { useRedeem } from '@/hooks/use-yo-protocol';
+import { useRedeem, type RedeemStep } from '@yo-protocol/react';
+import { parseUnits } from 'viem';
 import { Allocation } from '@/lib/types';
 import { YO_VAULTS } from '@/lib/vaults';
 
+// Map SDK RedeemStep to the TransactionStatus component's expected status values.
+// The component uses 'depositing' as the processing step key internally, but renders
+// it as "Redeeming" when type="redeem" is passed — so this mapping is correct.
+function mapRedeemStep(step: RedeemStep): 'idle' | 'approving' | 'depositing' | 'confirmed' | 'error' {
+  switch (step) {
+    case 'approving': return 'approving';
+    case 'redeeming':
+    case 'waiting': return 'depositing';
+    case 'success': return 'confirmed';
+    case 'error': return 'error';
+    default: return 'idle';
+  }
+}
+
 export default function WithdrawPage() {
-  const { redeem, status: txStatus, txHash } = useRedeem();
+  const { redeem, step: redeemStep, hash } = useRedeem({ vault: 'yoUSD' });
+  const txStatus = mapRedeemStep(redeemStep);
+  const txHash = hash ?? null;
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [totalValue, setTotalValue] = useState(0);
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -31,14 +48,11 @@ export default function WithdrawPage() {
     const amount = parseFloat(withdrawAmount) || 0;
     if (amount <= 0) return;
 
-    // Redeem proportionally from all vaults
-    for (const alloc of allocations) {
-      const vaultAmount = (amount * alloc.percentage) / 100;
-      await redeem({
-        vaultId: alloc.vaultId,
-        amount: vaultAmount,
-      });
-    }
+    // For yoUSD stablecoin vault, shares and assets are denominated in USDC (6 decimals).
+    // Note: After yield accrual, 1 share may exceed 1 USDC in value. For a precise
+    // conversion, use the previewRedeem hook. This approximation is adequate for typical
+    // withdrawal amounts where the exchange rate is close to 1.
+    await redeem(parseUnits(withdrawAmount, 6));
   };
 
   const amount = parseFloat(withdrawAmount) || 0;

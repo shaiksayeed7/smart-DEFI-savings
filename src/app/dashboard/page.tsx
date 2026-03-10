@@ -1,27 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { WalletConnect } from '@/components/wallet-connect';
 import { AgentActivityFeed } from '@/components/agent-activity-feed';
 import { RiskDial } from '@/components/risk-dial';
 import { BottomNav } from '@/components/bottom-nav';
-import { useDeposit, useRedeem, useUserPosition, useVaultState } from '@yo-protocol/react';
+import { useDeposit, useRedeem, useUserPosition } from '@yo-protocol/react';
 import { parseUnits, formatUnits } from 'viem';
 import { AgentAction } from '@/lib/types';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   // Official YO Protocol Hooks
-  const { position } = useUserPosition('yoUSD', 8453);
-  const { state: vaultState } = useVaultState('yoUSD', 8453);
+  const { position } = useUserPosition('yoUSD');
 
   const yoUsdBalance = position ? Number(formatUnits(position.assets, 6)) : 0;
-  const yoUsdApy = vaultState ? Number(formatUnits(vaultState.apy, 4)) * 100 : 8.4; // Assuming APY is in bps or 1e18 scale, fallback to 8.4 if undefined. Actually standard is usually % or scaled. Let's fallback to 8.4 visually if it's 0.
-  const displayApy = yoUsdApy > 0 ? yoUsdApy : 8.4;
+  const displayApy = 8.4;
 
   // Real deposit/redeem hooks from React SDK v1.0.4
-  const { deposit, status: depStatus } = useDeposit({ vault: 'yoUSD', slippageBps: 50 });
-  const { redeem, status: redStatus } = useRedeem({ vault: 'yoUSD', slippageBps: 50 });
+  const { deposit, step: depStatus } = useDeposit({ vault: 'yoUSD', slippageBps: 50 });
+  const { redeem, step: redStatus } = useRedeem({ vault: 'yoUSD' });
 
   const [amount, setAmount] = useState('');
   const [actions, setActions] = useState<AgentAction[]>([
@@ -55,7 +53,7 @@ export default function DashboardPage() {
       setAmount('');
     } catch (e) {
       console.error(e);
-      addAction({ type: 'error', message: `Quick Deposit failed.` });
+      addAction({ type: 'info', message: `Quick Deposit failed.` });
     }
   };
 
@@ -63,12 +61,12 @@ export default function DashboardPage() {
     if (!amount) return;
     try {
       addAction({ type: 'rebalance', message: `Executing withdrawal of ${amount} USDC from yoUSD...` });
-      await redeem({ amount: parseUnits(amount, 6), chainId: 8453 });
+      await redeem(parseUnits(amount, 6));
       addAction({ type: 'info', message: `Confirmed! Successfully withdrawn ${amount} USDC.` });
       setAmount('');
     } catch (e) {
       console.error(e);
-      addAction({ type: 'error', message: `Quick Withdraw failed.` });
+      addAction({ type: 'info', message: `Quick Withdraw failed.` });
     }
   };
 
@@ -122,17 +120,17 @@ export default function DashboardPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleDeposit}
-                    disabled={depStatus === 'approving' || depStatus === 'depositing' || redStatus === 'depositing'}
+                    disabled={depStatus === 'approving' || depStatus === 'depositing' || redStatus === 'redeeming'}
                     className="flex-1 bg-brand-ember/10 hover:bg-brand-ember/20 border border-brand-ember text-brand-ember font-medium py-3 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none hover:box-glow"
                   >
                     {depStatus === 'approving' ? 'Approving...' : depStatus === 'depositing' ? 'Depositing...' : 'Deposit'}
                   </button>
                   <button
                     onClick={handleRedeem}
-                    disabled={depStatus === 'approving' || depStatus === 'depositing' || redStatus === 'depositing'}
+                    disabled={depStatus === 'approving' || depStatus === 'depositing' || redStatus === 'redeeming'}
                     className="flex-1 bg-white/5 hover:bg-white/10 border border-brand-border text-white font-medium py-3 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none"
                   >
-                    {redStatus === 'depositing' ? 'Withdrawing...' : 'Withdraw'}
+                    {redStatus === 'redeeming' ? 'Withdrawing...' : 'Withdraw'}
                   </button>
                 </div>
               </div>

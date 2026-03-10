@@ -1,19 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { WalletConnect } from '@/components/wallet-connect';
-import { useAccount } from 'wagmi';
 import { YO_VAULTS } from '@/lib/vaults';
 
 export default function LandingPage() {
-  const { isConnected } = useAccount();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <div className="min-h-screen bg-brand-dark text-white selection:bg-brand-ember/30 overflow-hidden font-sans">
 
